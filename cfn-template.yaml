@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::LanguageExtensions"
+Parameters:
+  CloudFrontPriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues:
+      - PriceClass_100
+      - PriceClass_200
+      - PriceClass_All
+    Description: The price class for the CloudFront distribution.
+  CloudFrontCachePolicy:
+    Type: String
+    Default: CachingDisabled
+    AllowedValues:
+      - CachingDisabled
+      - CachingOptimized
+      - CachingOptimizedForUncompressedObjects
+      - Elemental-MediaPackage
+      - Amplify
+    Description: The cache policy for the CloudFront distribution.
+
+Mappings:
+  CloudFrontCachePolicyIds:
+    CachingDisabled:
+      CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    CachingOptimized:
+      CachePolicyId: "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    CachingOptimizedForUncompressedObjects:
+      CachePolicyId: "b2884449-e4de-46a7-ac36-70bc7f1ddd6d"
+    Elemental-MediaPackage:
+      CachePolicyId: "08627262-05a9-4f76-9ded-b50ca2e3a84f"
+    Amplify:
+      CachePolicyId: "2e54312d-136d-493c-8eb9-b001f22f67d2"
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: cloud-deploy-bucket
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Description: "origin access control(OAC) for allowing cloudfront to access S3 bucket"
+        Name: cloud-deploy-OAC
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn:
+      - S3Bucket
+    Properties:
+      DistributionConfig:
+        PriceClass: !Ref CloudFrontPriceClass
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - DomainName:
+              !Select [
+                2,
+                !Split ["/", !GetAtt LambdaFunctionFunctionUrl.FunctionUrl],
+              ]
+            Id: cloud-deploy-lambda
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+          - DomainName: "cloud-deploy-bucket.s3.us-east-2.amazonaws.com"
+            Id: cloud-deploy-s3
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+        Enabled: true
+        # Aliases:
+        #   - web.example.com
+        # ViewerCertificate:
+        #   AcmCertificateArn: "arn:aws:acm:us-east-1:Id-of-IAM-User:certificate/1xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+        #   MinimumProtocolVersion: TLSv1.2_2021
+        #   SslSupportMethod: sni-only
+        DefaultCacheBehavior:
+          TargetOriginId: cloud-deploy-lambda
+          CachePolicyId:
+            !FindInMap [
+              CloudFrontCachePolicyIds,
+              CachingDisabled,
+              CachePolicyId,
+            ]
+          ViewerProtocolPolicy: redirect-to-https
+          SmoothStreaming: "false"
+          Compress: "true"
+        CacheBehaviors:
+{{CacheBehaviors}}
+
+  CloudFrontOriginIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: "origin identity"
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: cloud-deploy-lambda
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          const myHandler = async (event) => {
+            // Your Lambda function logic here
+          };
+
+          exports.handler = myHandler
+      Role: !GetAtt LambdaFunctionRole.Arn
+
+  LambdaFunctionFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt LambdaFunction.Arn
+
+  LambdaFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      FunctionUrlAuthType: NONE
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+
+  LambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: AppendToLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"

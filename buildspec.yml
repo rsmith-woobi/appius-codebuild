@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - npm install -g npm@latest
+      - npm install
+      - cd repo
+      - npm install
+      - cd ..
+  build:
+    commands:
+      - npm run build
+      - ls -la
+artifacts:
+  files:
+    - out/s3/**/*
+    - out/lambda/index.zip
