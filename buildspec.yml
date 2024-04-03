@@ -18,3 +18,4 @@ artifacts:
   files:
     - out/s3/**/*
     - out/lambda/index.zip
+    - out/cfn/appius-deploy.yaml
