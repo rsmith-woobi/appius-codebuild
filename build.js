@@ -84,7 +84,11 @@ function generateCloudformationTemplate() {
     cacheBehaviors += section;
   });
   const cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
-  const cfnOutputPath = path.join(__dirname, "./cloud-deploy.yaml");
+  const cfnOutputDir = path.join(__dirname, "out/cfn");
+  if (!fs.existsSync(cfnOutputDir)) {
+    fs.mkdirSync(cfnOutputDir);
+  }
+  const cfnOutputPath = path.join(cfnOutputDir, "./appius-deploy.yaml");
   if (fs.existsSync(cfnOutputPath)) {
     fs.rmSync(cfnOutputPath);
   }
