@@ -6,6 +6,7 @@ import archiver from "archiver";
 
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncS3Buckets } from "./s3";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -43,6 +44,8 @@ if (isVite) {
 
 console.log("Generating CloudFormation template...");
 generateCloudformationTemplate();
+
+await syncS3Buckets('./out', 's3://appius-deploy-bucket/appius-deploy-code-build', { del: true });
 
 // Generate the CloudFormation template
 // It will create a Cloudfront Cache Behavior for each file and folder in the out/s3 directory
