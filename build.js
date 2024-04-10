@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 import {
   S3Client,
 } from '@aws-sdk/client-s3';
-import path from 'node:path';
 import { S3SyncClient } from 's3-sync-client';
 
 export async function syncS3Buckets(
