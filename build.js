@@ -150,11 +150,11 @@ async function build_remix_lambda(buildPath) {
 
 
   await fs.mkdir(path.join(outPath, "./lambda"), { recursive: true });
-  await zip();
-  function zip() {
-    const output = fs.createWriteStream(
-      path.join(__dirname, "./out/lambda/index.zip")
-    );
+  const handle = await fs.open(path.join(__dirname, "./out/lambda/index.zip"))
+  await zip(handle);
+  
+  function zip(handle) {
+    const output = handle.createWriteStream();
   
     const promise = new Promise((resolve, reject) => { 
       try {
