@@ -22,7 +22,17 @@ export async function syncS3Buckets(
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const isVite = fs.existsSync(path.join(__dirname, "./repo/vite.config.ts"));
+
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+const isVite = await fileExists(path.join(__dirname, "./repo/vite.config.ts"));
 
 const buildPath = isVite ? "./repo/build/server" : "./repo/build";
 const installCommand = "npm install";
