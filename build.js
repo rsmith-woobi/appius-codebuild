@@ -3,25 +3,26 @@ import fs from "fs/promises";
 import path from "path";
 import esbuild from "esbuild";
 import archiver from "archiver";
+import mime from 'mime-types';
 
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   S3Client,
-} from '@aws-sdk/client-s3';
-import { S3SyncClient } from 's3-sync-client';
+} from "@aws-sdk/client-s3";
+import { S3SyncClient } from "s3-sync-client";
 
-export async function syncS3Buckets(
-  source,
-  dest,
-  options,
-) {
+async function syncS3Buckets(source, dest, options) {
   const { sync } = new S3SyncClient({ client: new S3Client({}) });
-  await sync(source, dest, { del: true, ...options });
+  await sync(source, dest, { 
+    del: true, 
+    commandInput: (input) => ({
+      ContentType: mime.lookup(input.Key) || 'text/html',
+    }),
+    ...options });
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 
 async function fileExists(filePath) {
   try {
@@ -67,7 +68,10 @@ if (isVite) {
 console.log("Generating CloudFormation template...");
 await generateCloudformationTemplate();
 
-await syncS3Buckets('./out/', 's3://appius-deploy-bucket/appius-deploy-code-build/out');
+await syncS3Buckets(
+  "./out/",
+  "s3://appius-deploy-bucket/appius-deploy-code-build/out"
+);
 
 // Generate the CloudFormation template
 // It will create a Cloudfront Cache Behavior for each file and folder in the out/s3 directory
@@ -113,7 +117,7 @@ async function generateCloudformationTemplate() {
   });
   const cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
   const cfnOutputDir = path.join(__dirname, "out/cfn");
-  if (!await fileExists(cfnOutputDir)) {
+  if (!(await fileExists(cfnOutputDir))) {
     await fs.mkdir(cfnOutputDir);
   }
   const cfnOutputPath = path.join(cfnOutputDir, "./appius-deploy.yaml");
@@ -126,7 +130,10 @@ async function generateCloudformationTemplate() {
 async function build_remix_lambda(buildPath) {
   // Copy the polyfill.js file to the build directory
   const polyfillDest = path.join(buildPath, "polyfill.js");
-  await fs.copyFile(path.resolve(__dirname, "./remix/polyfill.js"), polyfillDest);
+  await fs.copyFile(
+    path.resolve(__dirname, "./remix/polyfill.js"),
+    polyfillDest
+  );
 
   // Copy the handler.js file to the build directory
   const handlerDest = path.join(buildPath, "handler.js");
@@ -151,14 +158,16 @@ async function build_remix_lambda(buildPath) {
   await fs.rm(polyfillDest);
   await fs.rm(handlerDest);
 
-
   await fs.mkdir(path.join(outPath, "./lambda"), { recursive: true });
-  const handle = await fs.open(path.join(__dirname, "./out/lambda/index.zip"), 'w')
+  const handle = await fs.open(
+    path.join(__dirname, "./out/lambda/index.zip"),
+    "w"
+  );
   await zip();
   function zip() {
     const output = handle.createWriteStream();
-  
-    const promise = new Promise((resolve, reject) => { 
+
+    const promise = new Promise((resolve, reject) => {
       try {
         const archive = archiver("zip");
         archive.pipe(output);
@@ -175,9 +184,8 @@ async function build_remix_lambda(buildPath) {
         });
       } catch (error) {
         reject(error);
-      }   
+      }
     });
     return promise;
   }
 }
-

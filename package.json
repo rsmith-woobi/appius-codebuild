@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.552.0",
+    "mime-types": "^2.1.35",
     "s3-sync-client": "^4.3.1"
   }
 }
