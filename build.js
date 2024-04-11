@@ -95,14 +95,17 @@ async function generateCloudformationTemplate() {
   const s3FolderPath = path.join(__dirname, "./out/s3");
   const files = await fs.readdir(s3FolderPath);
 
-  const pathPatterns = files.map((file) => {
+  const pathPatternsPromises = files.map(async (file) => {
     const filePath = path.join(s3FolderPath, file);
-    if (fs.lstatSync(filePath).isDirectory()) {
+    const fileStat = await fs.lstat(filePath);
+    if (fileStat.isDirectory()) {
       return `${file}/*`;
     } else {
       return file;
     }
   });
+
+  const pathPatterns = await Promise.all(pathPatternsPromises);
 
   pathPatterns.forEach((pathPattern) => {
     const section = cacheBehavior.replace("{{PathPattern}}", pathPattern);
@@ -110,14 +113,14 @@ async function generateCloudformationTemplate() {
   });
   const cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
   const cfnOutputDir = path.join(__dirname, "out/cfn");
-  if (!fs.existsSync(cfnOutputDir)) {
-    fs.mkdirSync(cfnOutputDir);
+  if (!await fileExists(cfnOutputDir)) {
+    await fs.mkdir(cfnOutputDir);
   }
   const cfnOutputPath = path.join(cfnOutputDir, "./appius-deploy.yaml");
-  if (fs.existsSync(cfnOutputPath)) {
-    fs.rmSync(cfnOutputPath);
+  if (await fileExists(cfnOutputPath)) {
+    await fs.rm(cfnOutputPath);
   }
-  fs.writeFileSync(cfnOutputPath, cfnOutput);
+  await fs.writeFile(cfnOutputPath, cfnOutput);
 }
 
 async function build_remix_lambda(buildPath) {
@@ -150,10 +153,9 @@ async function build_remix_lambda(buildPath) {
 
 
   await fs.mkdir(path.join(outPath, "./lambda"), { recursive: true });
-  const handle = await fs.open(path.join(__dirname, "./out/lambda/index.zip"))
-  await zip(handle);
-  
-  function zip(handle) {
+  const handle = await fs.open(path.join(__dirname, "./out/lambda/index.zip"), 'w')
+  await zip();
+  function zip() {
     const output = handle.createWriteStream();
   
     const promise = new Promise((resolve, reject) => { 
@@ -167,8 +169,9 @@ async function build_remix_lambda(buildPath) {
           console.log(
             "archiver has been finalized and the output file descriptor has closed."
           );
-          fs.rmSync(outFile);
-          resolve();
+          fs.rm(outFile).then(() => {
+            resolve();
+          });
         });
       } catch (error) {
         reject(error);
