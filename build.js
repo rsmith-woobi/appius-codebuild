@@ -67,7 +67,7 @@ if (isVite) {
 console.log("Generating CloudFormation template...");
 await generateCloudformationTemplate();
 
-await syncS3Buckets(path.join(__dirname,'./out'), 's3://appius-deploy-bucket/appius-deploy-code-build/out/');
+await syncS3Buckets('./out/', 's3://appius-deploy-bucket/appius-deploy-code-build/out');
 
 // Generate the CloudFormation template
 // It will create a Cloudfront Cache Behavior for each file and folder in the out/s3 directory
