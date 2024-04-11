@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import esbuild from "esbuild";
 import archiver from "archiver";
@@ -22,7 +22,7 @@ export async function syncS3Buckets(
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const isVite = fs.existsSync(path.join(__dirname, "./repo/vite.config.ts"));
+const isVite = await fs.exists(path.join(__dirname, "./repo/vite.config.ts"));
 
 const buildPath = isVite ? "./repo/build/server" : "./repo/build";
 const installCommand = "npm install";
@@ -30,24 +30,24 @@ const buildCommand = "npm run build";
 
 console.log("Building the app...");
 // Remove the build directory in case it exists
-fs.rmSync(buildPath, { recursive: true, force: true });
+await fs.rm(buildPath, { recursive: true, force: true });
 // Run the install command
 // execSync(installCommand, { cwd: "./repo", stdio: "inherit" });
 // Run the build command
 execSync(buildCommand, { cwd: "./repo", stdio: "inherit" });
 
 console.log("Building server lambda...");
-build_remix_lambda(buildPath);
+await build_remix_lambda(buildPath);
 
-fs.mkdirSync(path.join(__dirname, "./out/s3"), { recursive: true });
+await fs.mkdir(path.join(__dirname, "./out/s3"), { recursive: true });
 if (isVite) {
-  fs.cpSync(
+  await fs.cp(
     path.join(__dirname, "./repo/build/client"),
     path.join(__dirname, "./out/s3"),
     { recursive: true }
   );
 } else {
-  fs.cpSync(
+  await fs.cp(
     path.join(__dirname, "./repo/public"),
     path.join(__dirname, "./out/s3"),
     { recursive: true }
@@ -61,9 +61,9 @@ await syncS3Buckets(path.join(__dirname,'./out'), 's3://appius-deploy-bucket');
 
 // Generate the CloudFormation template
 // It will create a Cloudfront Cache Behavior for each file and folder in the out/s3 directory
-function generateCloudformationTemplate() {
+async function generateCloudformationTemplate() {
   const cfnTemplatePath = path.join(__dirname, "./cfn-template.yaml");
-  const cfnTemplate = fs.readFileSync(cfnTemplatePath, "utf8");
+  const cfnTemplate = await fs.readFile(cfnTemplatePath, "utf8");
 
   const cacheBehavior = `          - PathPattern: {{PathPattern}}
             TargetOriginId: cloud-deploy-s3
@@ -83,7 +83,7 @@ function generateCloudformationTemplate() {
 `;
   let cacheBehaviors = "";
   const s3FolderPath = path.join(__dirname, "./out/s3");
-  const files = fs.readdirSync(s3FolderPath);
+  const files = await fs.readdir(s3FolderPath);
 
   const pathPatterns = files.map((file) => {
     const filePath = path.join(s3FolderPath, file);
@@ -110,23 +110,23 @@ function generateCloudformationTemplate() {
   fs.writeFileSync(cfnOutputPath, cfnOutput);
 }
 
-function build_remix_lambda(buildPath) {
+async function build_remix_lambda(buildPath) {
   // Copy the polyfill.js file to the build directory
   const polyfillDest = path.join(buildPath, "polyfill.js");
-  fs.copyFileSync(path.resolve(__dirname, "./remix/polyfill.js"), polyfillDest);
+  await fs.copyFile(path.resolve(__dirname, "./remix/polyfill.js"), polyfillDest);
 
   // Copy the handler.js file to the build directory
   const handlerDest = path.join(buildPath, "handler.js");
-  fs.copyFileSync(path.resolve(__dirname, "./remix/handler.js"), handlerDest);
+  await fs.copyFile(path.resolve(__dirname, "./remix/handler.js"), handlerDest);
 
   // Make sure the out directory exists
   const outPath = path.join(__dirname, "./out");
-  fs.rmSync(outPath, { recursive: true, force: true });
-  fs.mkdirSync(outPath, { recursive: true });
+  await fs.rm(outPath, { recursive: true, force: true });
+  await fs.mkdir(outPath, { recursive: true });
 
   const outFile = path.join(__dirname, "./out/index.js");
   // Create the lambda function build using esbuild
-  esbuild.buildSync({
+  await esbuild.build({
     entryPoints: [handlerDest],
     bundle: true,
     minify: true,
@@ -135,22 +135,36 @@ function build_remix_lambda(buildPath) {
     platform: "node",
   });
 
-  fs.rmSync(polyfillDest);
-  fs.rmSync(handlerDest);
+  await fs.rm(polyfillDest);
+  await fs.rm(handlerDest);
 
-  fs.mkdirSync(path.join(outPath, "./lambda"), { recursive: true });
-  const output = fs.createWriteStream(
-    path.join(__dirname, "./out/lambda/index.zip")
-  );
-  const archive = archiver("zip");
-  archive.pipe(output);
-  archive.file(outFile, { name: "index.js" });
-  archive.finalize();
-  output.on("close", function () {
-    console.log(archive.pointer() + " total bytes");
-    console.log(
-      "archiver has been finalized and the output file descriptor has closed."
+
+  await fs.mkdir(path.join(outPath, "./lambda"), { recursive: true });
+  await zip();
+  function zip() {
+    const output = fs.createWriteStream(
+      path.join(__dirname, "./out/lambda/index.zip")
     );
-    fs.rmSync(outFile);
-  });
+  
+    const promise = new Promise((resolve, reject) => { 
+      try {
+        const archive = archiver("zip");
+        archive.pipe(output);
+        archive.file(outFile, { name: "index.js" });
+        archive.finalize();
+        output.on("close", function () {
+          console.log(archive.pointer() + " total bytes");
+          console.log(
+            "archiver has been finalized and the output file descriptor has closed."
+          );
+          fs.rmSync(outFile);
+          resolve();
+        });
+      } catch (error) {
+        reject(error);
+      }   
+    });
+    return promise;
+  }
 }
+
