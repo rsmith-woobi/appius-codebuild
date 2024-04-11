@@ -176,3 +176,20 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
+
+  CompletionHandler:
+    Type: Custom::CompletionHandler
+    DeletionPolicy: Retain
+    DependsOn:
+      - S3Bucket
+      - CloudFrontOriginAccessControl
+      - CloudFrontDistribution
+      - CloudFrontOriginIdentity
+      - BucketPolicy
+      - LambdaFunction
+      - LambdaFunctionFunctionUrl
+      - LambdaFunctionPermission
+      - LambdaFunctionRole
+    Properties:
+      ServiceToken: arn:aws:lambda:us-east-2:767397770198:function:appius-deploy
+      Name: deploy
