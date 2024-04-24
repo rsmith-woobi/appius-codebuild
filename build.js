@@ -68,11 +68,9 @@ if (isVite) {
 console.log("Generating CloudFormation template...");
 await generateCloudformationTemplate();
 
-const uuid = process.env.UUID;
-
 await syncS3Buckets(
   "./out/",
-  `s3://appius-${uuid}-bucket/appius-deploy-code-build/out`
+  `s3://appius-${process.env.UUID}-bucket/appius-deploy-code-build/out`
 );
 
 // Generate the CloudFormation template
@@ -118,7 +116,7 @@ async function generateCloudformationTemplate() {
     cacheBehaviors += section;
   });
   let cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
-  cfnOutput = cfnOutput.replaceAll("{{UUID}}", uuid);
+  cfnOutput = cfnOutput.replaceAll("{{UUID}}", process.env.UUID);
   const cfnOutputDir = path.join(__dirname, "out/cfn");
   if (!(await fileExists(cfnOutputDir))) {
     await fs.mkdir(cfnOutputDir);
