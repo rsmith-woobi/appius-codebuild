@@ -68,9 +68,11 @@ if (isVite) {
 console.log("Generating CloudFormation template...");
 await generateCloudformationTemplate();
 
+const uuid = process.env.UUID;
+
 await syncS3Buckets(
   "./out/",
-  "s3://appius-deploy-bucket/appius-deploy-code-build/out"
+  `s3://appius-${uuid}-bucket/appius-deploy-code-build/out`
 );
 
 // Generate the CloudFormation template
