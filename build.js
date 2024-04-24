@@ -80,7 +80,7 @@ async function generateCloudformationTemplate() {
   const cfnTemplate = await fs.readFile(cfnTemplatePath, "utf8");
 
   const cacheBehavior = `          - PathPattern: {{PathPattern}}
-            TargetOriginId: cloud-deploy-s3
+            TargetOriginId: appius-project-${process.env.UUID}-s3
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
