@@ -16,7 +16,7 @@ phases:
       - ls -la
   post_build:
     commands:
-      - curl https://xhek7d5njb7kfhkmxs46dbs46q0yahmw.lambda-url.us-east-2.on.aws/deploy
+      - curl https://xhek7d5njb7kfhkmxs46dbs46q0yahmw.lambda-url.us-east-2.on.aws/deploy?uuid=$UUID
 # artifacts:
 #   files:
 #     - out/s3/**/*
