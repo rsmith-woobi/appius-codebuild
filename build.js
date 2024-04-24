@@ -117,7 +117,8 @@ async function generateCloudformationTemplate() {
     const section = cacheBehavior.replace("{{PathPattern}}", pathPattern);
     cacheBehaviors += section;
   });
-  const cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
+  let cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
+  cfnOutput = cfnOutput.replaceAll("{{UUID}}", uuid);
   const cfnOutputDir = path.join(__dirname, "out/cfn");
   if (!(await fileExists(cfnOutputDir))) {
     await fs.mkdir(cfnOutputDir);

@@ -37,7 +37,7 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: cloud-deploy-bucket
+      BucketName: appius-project-{{UUID}}-bucket
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -51,7 +51,7 @@ Resources:
     Properties:
       OriginAccessControlConfig:
         Description: "origin access control(OAC) for allowing cloudfront to access S3 bucket"
-        Name: cloud-deploy-OAC
+        Name: appius-project-{{UUID}}-OAC
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
@@ -71,12 +71,12 @@ Resources:
                 2,
                 !Split ["/", !GetAtt LambdaFunctionFunctionUrl.FunctionUrl],
               ]
-            Id: cloud-deploy-lambda
+            Id: appius-project-{{UUID}}-lambda
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
-          - DomainName: "cloud-deploy-bucket.s3.us-east-2.amazonaws.com"
-            Id: cloud-deploy-s3
+          - DomainName: "appius-project-{{UUID}}-bucket.s3.us-east-2.amazonaws.com"
+            Id: appius-project-{{UUID}}-s3
             S3OriginConfig:
               OriginAccessIdentity: ""
             OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
@@ -88,7 +88,7 @@ Resources:
         #   MinimumProtocolVersion: TLSv1.2_2021
         #   SslSupportMethod: sni-only
         DefaultCacheBehavior:
-          TargetOriginId: cloud-deploy-lambda
+          TargetOriginId: appius-project-{{UUID}}-lambda
           CachePolicyId:
             !FindInMap [
               CloudFrontCachePolicyIds,
@@ -126,7 +126,7 @@ Resources:
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: cloud-deploy-lambda
+      FunctionName: appius-project-{{UUID}}-lambda
       Runtime: nodejs20.x
       Handler: index.handler
       Code:
@@ -193,3 +193,4 @@ Resources:
     Properties:
       ServiceToken: arn:aws:lambda:us-east-2:767397770198:function:appius-deploy
       Name: deploy
+      ProjectUUID: {{UUID}}
