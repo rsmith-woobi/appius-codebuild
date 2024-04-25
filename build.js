@@ -11,6 +11,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { S3SyncClient } from "s3-sync-client";
+import { v4 as uuidv4 } from 'uuid';
 
 async function syncS3Buckets(source, dest, options) {
   const { sync } = new S3SyncClient({ client: new S3Client({}) });
@@ -117,6 +118,7 @@ async function generateCloudformationTemplate() {
   });
   let cfnOutput = cfnTemplate.replace("{{CacheBehaviors}}", cacheBehaviors);
   cfnOutput = cfnOutput.replaceAll("{{UUID}}", process.env.UUID);
+  cfnOutput = cfnOutput.replaceAll("{{DEPLOYMENT_UUID}}", uuidv4());
   const cfnOutputDir = path.join(__dirname, "out/cfn");
   if (!(await fileExists(cfnOutputDir))) {
     await fs.mkdir(cfnOutputDir);
