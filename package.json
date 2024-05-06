@@ -5,13 +5,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "tsx src/build.ts"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/mime-types": "^2.1.4",
+    "@types/uuid": "^9.0.8",
     "archiver": "^7.0.1",
-    "esbuild": "0.20.2"
+    "esbuild": "0.20.2",
+    "prettier-plugin-organize-imports": "^3.2.4",
+    "tsx": "^4.9.3"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.552.0",

@@ -98,6 +98,14 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
           SmoothStreaming: "false"
           Compress: "true"
+          AllowedMethods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - HEAD
+            - OPTIONS
         CacheBehaviors:
 {{CacheBehaviors}}
 
