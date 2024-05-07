@@ -97,6 +97,9 @@ Resources:
     DependsOn:
       - S3Bucket
     Properties:
+      FunctionAssociations:
+        - EventType: viewer-request
+          FunctionARN: !GetAtt CloudFrontFunction.Arn
       DistributionConfig:
         PriceClass: !Ref CloudFrontPriceClass
         HttpVersion: http2
@@ -151,6 +154,28 @@ Resources:
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: "origin identity"
+
+  CloudFrontFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: appius-{{UUID}}-cloudfront-function
+      FunctionConfig:
+        Comment: CloudFront function for Appius project {{UUID}}
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          request.headers["x-forwarded-host"] = request.headers.host;
+
+        for (var key in request.querystring) {
+          if (key.includes("/")) {
+            request.querystring[encodeURIComponent(key)] = request.querystring[key];
+            delete request.querystring[key];
+          }
+        }
+          return request;
+        }
+      AutoPublish: true
 
   BucketPolicy:
     Type: AWS::S3::BucketPolicy
