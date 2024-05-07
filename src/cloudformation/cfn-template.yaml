@@ -32,6 +32,22 @@ Mappings:
       CachePolicyId: "08627262-05a9-4f76-9ded-b50ca2e3a84f"
     Amplify:
       CachePolicyId: "2e54312d-136d-493c-8eb9-b001f22f67d2"
+  CloudFrontOriginRequestPolicyIds:
+    AllViewer:
+      OriginRequestPolicyId: "216adef6-5c7f-47e4-b989-5492eafa07d3"
+    AllViewerExceptHostHeader:
+      OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac"
+    AllViewerAndCloudFrontHeaders-2022-06:
+      OriginRequestPolicyId: "33f36d7e-f396-46d9-90e0-52428a34d9dc"
+    CORS-CustomOrigin:
+      OriginRequestPolicyId: "59781a5b-3903-41f3-afcb-af62929ccde1"
+    CORS-S3Origin:
+      OriginRequestPolicyId: "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf"
+    Elemental-MediaTailor-PersonalizedManifests:
+      OriginRequestPolicyId: "775133bc-15f2-49f9-abea-afb2e0bf67d2"
+    UserAgentRefererHeaders:
+      OriginRequestPolicyId: "acba4595-bd28-49b8-b9fe-13317c0390fa"
+    
 
 Resources:
   S3Bucket:
@@ -55,6 +71,26 @@ Resources:
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
+
+
+  CloudFrontServerCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: appius-server-cache-policy
+        DefaultTTL: 0
+        MaxTTL: 365
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          HeadersConfig:
+            HeaderBehavior: none
+          CookiesConfig:
+            CookieBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: all
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+
 
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -89,11 +125,12 @@ Resources:
         #   SslSupportMethod: sni-only
         DefaultCacheBehavior:
           TargetOriginId: appius-project-{{UUID}}-lambda
-          CachePolicyId:
+          CachePolicyId: !Ref CloudFrontServerCachePolicy
+          OriginRequestPolicyId:
             !FindInMap [
-              CloudFrontCachePolicyIds,
-              CachingDisabled,
-              CachePolicyId,
+              CloudFrontOriginRequestPolicyIds,
+              AllViewerExceptHostHeader,
+              OriginRequestPolicyId,
             ]
           ViewerProtocolPolicy: redirect-to-https
           SmoothStreaming: "false"
@@ -151,6 +188,14 @@ Resources:
     Properties:
       AuthType: NONE
       TargetFunctionArn: !GetAtt LambdaFunction.Arn
+      Cors:
+        AllowCredentials: false
+        AllowMethods:
+          - *
+        AllowHeaders:
+          - *
+        AllowOrigins:
+          - *
 
   LambdaFunctionPermission:
     Type: AWS::Lambda::Permission
