@@ -97,9 +97,6 @@ Resources:
     DependsOn:
       - S3Bucket
     Properties:
-      FunctionAssociation:
-        EventType: viewer-request
-        FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
       DistributionConfig:
         PriceClass: !Ref CloudFrontPriceClass
         HttpVersion: http2
@@ -135,6 +132,9 @@ Resources:
               AllViewerExceptHostHeader,
               OriginRequestPolicyId,
             ]
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
           ViewerProtocolPolicy: redirect-to-https
           SmoothStreaming: "false"
           Compress: "true"
