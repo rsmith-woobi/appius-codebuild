@@ -191,11 +191,11 @@ Resources:
       Cors:
         AllowCredentials: false
         AllowMethods:
-          - *
+          - "*"
         AllowHeaders:
-          - *
+          - "*"
         AllowOrigins:
-          - *
+          - "*"
 
   LambdaFunctionPermission:
     Type: AWS::Lambda::Permission
