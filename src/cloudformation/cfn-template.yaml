@@ -77,7 +77,7 @@ Resources:
     Type: AWS::CloudFront::CachePolicy
     Properties:
       CachePolicyConfig:
-        Name: appius-server-cache-policy
+        Name: appius-{{UUID}}-server-cache-policy
         DefaultTTL: 0
         MaxTTL: 365
         MinTTL: 0
