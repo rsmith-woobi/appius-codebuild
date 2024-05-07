@@ -99,7 +99,7 @@ Resources:
     Properties:
       FunctionAssociations:
         - EventType: viewer-request
-          FunctionARN: !GetAtt CloudFrontFunction.Arn
+          FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
       DistributionConfig:
         PriceClass: !Ref CloudFrontPriceClass
         HttpVersion: http2
