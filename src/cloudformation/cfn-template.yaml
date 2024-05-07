@@ -97,9 +97,9 @@ Resources:
     DependsOn:
       - S3Bucket
     Properties:
-      FunctionAssociations:
-        - EventType: viewer-request
-          FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
+      FunctionAssociation:
+        EventType: viewer-request
+        FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
       DistributionConfig:
         PriceClass: !Ref CloudFrontPriceClass
         HttpVersion: http2
