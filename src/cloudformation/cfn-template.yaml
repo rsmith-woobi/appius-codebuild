@@ -207,6 +207,8 @@ Resources:
 
           exports.handler = myHandler
       Role: !GetAtt LambdaFunctionRole.Arn
+      Timeout: 30
+      MemorySize: 512
 
   LambdaFunctionFunctionUrl:
     Type: AWS::Lambda::Url
