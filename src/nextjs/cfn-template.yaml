@@ -114,7 +114,7 @@ Resources:
           - DomainName:
               !Select [
                 2,
-                !Split ["/", !GetAtt LambdaFunctionFunctionUrl.FunctionUrl],
+                !Split ["/", !GetAtt ImgOptLambdaFunctionFunctionUrl.FunctionUrl],
               ]
             Id: appius-{{UUID}}-img-opt-lambda
             CustomOriginConfig:
@@ -282,6 +282,20 @@ Resources:
       Role: !GetAtt LambdaFunctionRole.Arn
       Timeout: 30
       MemorySize: 512
+
+  ImgOptLambdaFunctionFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt ImgOptLambdaFunction.Arn
+      Cors:
+        AllowCredentials: false
+        AllowMethods:
+          - "*"
+        AllowHeaders:
+          - "*"
+        AllowOrigins:
+          - "*"
 
   ImgOptLambdaFunctionPermission:
     Type: AWS::Lambda::Permission
