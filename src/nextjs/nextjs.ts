@@ -5,6 +5,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { makeCleanDir } from '../utils/io';
 import { zipDir } from '../utils/zip';
 
+interface OpenNextOutput {
+  behaviors: {
+    pattern: string;
+    origin?: string;
+    edgeFunction?: string;
+  }[];
+}
+
 export async function buildNextjs(ROOT_DIR: string) {
   const REPO_DIR = path.join(ROOT_DIR, 'repo');
 
@@ -55,45 +63,38 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
     throw new Error('UUID environment variable is not set');
   }
 
+  const openNextOutputJson = await fs.readFile(
+    path.join(ROOT_DIR, 'out/open-next.output.json'),
+    'utf8',
+  );
+  const openNextOutput = JSON.parse(openNextOutputJson) as OpenNextOutput;
+
   const CFN_TEMPLATE_PATH = path.join(ROOT_DIR, 'src/nextjs/cfn-template.yaml');
   const cfnTemplate = await fs.readFile(CFN_TEMPLATE_PATH, 'utf8');
 
-  const cacheBehavior = `          - PathPattern: "{{PathPattern}}"
-            TargetOriginId: appius-project-${process.env.UUID}-s3
-            ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-            SmoothStreaming: "false"
-            Compress: "true"
-            CachePolicyId:
-              !FindInMap [
-                CloudFrontCachePolicyIds,
-                CachingOptimized,
-                CachePolicyId,
-              ]
-`;
   let cacheBehaviors = '';
-  const OUT_S3_DIR = path.join(ROOT_DIR, './out/s3');
-  const files = await fs.readdir(OUT_S3_DIR);
+  openNextOutput.behaviors
+    .filter((behavior) => behavior.origin === 's3')
+    .forEach((behavior) => {
+      const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
+              TargetOriginId: appius-project-${UUID}-s3
+              ViewerProtocolPolicy: redirect-to-https
+              AllowedMethods:
+                - GET
+                - HEAD
+                - OPTIONS
+              SmoothStreaming: "false"
+              Compress: "true"
+              CachePolicyId:
+                !FindInMap [
+                  CloudFrontCachePolicyIds,
+                  CachingOptimized,
+                  CachePolicyId,
+                ]
+  `;
+      cacheBehaviors += cacheBehavior;
+    });
 
-  const pathPatternsPromises = files.map(async (file) => {
-    const filePath = path.join(OUT_S3_DIR, file);
-    const fileStat = await fs.lstat(filePath);
-    if (fileStat.isDirectory()) {
-      return `${file}/*`;
-    } else {
-      return file;
-    }
-  });
-
-  const pathPatterns = await Promise.all(pathPatternsPromises);
-
-  pathPatterns.forEach((pathPattern) => {
-    const section = cacheBehavior.replace('{{PathPattern}}', pathPattern);
-    cacheBehaviors += section;
-  });
   let cfnOutput = cfnTemplate.replace('{{CacheBehaviors}}', cacheBehaviors);
   cfnOutput = cfnOutput.replace(/{{UUID}}/g, UUID);
   cfnOutput = cfnOutput.replace(/{{DEPLOYMENT_UUID}}/g, uuidv4());
