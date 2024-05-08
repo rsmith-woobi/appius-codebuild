@@ -64,7 +64,7 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
   }
 
   const openNextOutputJson = await fs.readFile(
-    path.join(ROOT_DIR, 'out/open-next.output.json'),
+    path.join(ROOT_DIR, 'repo/.open-next/open-next.output.json'),
     'utf8',
   );
   const openNextOutput = JSON.parse(openNextOutputJson) as OpenNextOutput;
@@ -77,21 +77,53 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
     .filter((behavior) => behavior.origin === 's3')
     .forEach((behavior) => {
       const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
-              TargetOriginId: appius-project-${UUID}-s3
-              ViewerProtocolPolicy: redirect-to-https
-              AllowedMethods:
-                - GET
-                - HEAD
-                - OPTIONS
-              SmoothStreaming: "false"
-              Compress: "true"
-              CachePolicyId:
-                !FindInMap [
-                  CloudFrontCachePolicyIds,
-                  CachingOptimized,
-                  CachePolicyId,
-                ]
-  `;
+            TargetOriginId: appius-project-${UUID}-s3
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            SmoothStreaming: "false"
+            Compress: "true"
+            CachePolicyId:
+              !FindInMap [
+                CloudFrontCachePolicyIds,
+                CachingOptimized,
+                CachePolicyId,
+              ]
+`;
+      cacheBehaviors += cacheBehavior;
+    });
+
+  openNextOutput.behaviors
+    .filter(
+      (behavior) => behavior.origin === 'default' && behavior.pattern !== '*',
+    )
+    .forEach((behavior) => {
+      const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
+            TargetOriginId: appius-project-${UUID}-lambda
+            CachePolicyId: !Ref CloudFrontServerCachePolicy
+            OriginRequestPolicyId:
+              !FindInMap [
+                CloudFrontOriginRequestPolicyIds,
+                AllViewerExceptHostHeader,
+                OriginRequestPolicyId,
+              ]
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
+            ViewerProtocolPolicy: redirect-to-https
+            SmoothStreaming: "false"
+            Compress: "true"
+            AllowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - HEAD
+              - OPTIONS
+`;
       cacheBehaviors += cacheBehavior;
     });
 
