@@ -50,13 +50,13 @@ export async function buildNextjs(ROOT_DIR: string) {
   await fs.cp(OPEN_NEXT_ASSETS_DIR, OUT_S3_ASSET_DIR, { recursive: true });
 }
 
-export function generateNextJsCloudformationTemplate() {
+export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
   const UUID = process.env.UUID;
   if (!UUID) {
     throw new Error('UUID environment variable is not set');
   }
 
-  return `
+  const template = `
 AWSTemplateFormatVersion: 2010-09-09
 Mappings:
   CloudFrontCachePolicyIds:
@@ -98,4 +98,9 @@ Resources:
         BlockPublicPolicy: false
         RestrictPublicBuckets: false
 `;
+
+  const OUT_CFN_DIR = path.join(ROOT_DIR, 'out/cfn');
+  await makeCleanDir(OUT_CFN_DIR);
+  const CFN_PATH = path.join(OUT_CFN_DIR, 'appius-deploy.yaml');
+  await fs.writeFile(CFN_PATH, template);
 }

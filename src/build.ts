@@ -30,7 +30,7 @@ switch (FRAMEWORK) {
     break;
   case 'nextjs':
     await buildNextjs(ROOT_DIR);
-    await generateNextJsCloudformationTemplate();
+    await generateNextJsCloudformationTemplate(ROOT_DIR);
     break;
   default:
     throw new Error('Invalid FRAMEWORK: ' + FRAMEWORK);
