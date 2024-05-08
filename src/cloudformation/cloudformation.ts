@@ -3,7 +3,7 @@ import path from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
 import { fileExists } from '../utils/io';
 
-export async function generateCloudformationTemplate(ROOT_DIR: string) {
+export async function generateSsrCloudformationTemplate(ROOT_DIR: string) {
   const UUID = process.env.UUID;
   if (!UUID) {
     throw new Error('UUID environment variable is not set');

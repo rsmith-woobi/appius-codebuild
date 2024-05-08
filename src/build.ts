@@ -1,6 +1,7 @@
 import path from 'node:path';
 import url from 'node:url';
-import { generateCloudformationTemplate } from './cloudformation/cloudformation';
+import { generateSsrCloudformationTemplate } from './cloudformation/cloudformation';
+import { buildNextjs } from './nextjs/nextjs';
 import { buildRemixClient, buildRemixLambda } from './remix/remix';
 import {
   buildSveltekitClient,
@@ -17,16 +18,19 @@ switch (FRAMEWORK) {
   case 'remix':
     await buildRemixLambda(ROOT_DIR);
     await buildRemixClient(ROOT_DIR);
+    await generateSsrCloudformationTemplate(ROOT_DIR);
     break;
   case 'sveltekit':
     await buildSveltekitLambda(ROOT_DIR);
     await buildSveltekitClient(ROOT_DIR);
+    await generateSsrCloudformationTemplate(ROOT_DIR);
+    break;
+  case 'nextjs':
+    await buildNextjs(ROOT_DIR);
     break;
   default:
     throw new Error('Invalid FRAMEWORK: ' + FRAMEWORK);
 }
-
-await generateCloudformationTemplate(ROOT_DIR);
 
 await syncS3Buckets(
   OUT_DIR,

@@ -21,6 +21,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.552.0",
     "mime-types": "^2.1.35",
+    "open-next": "^3.0.0",
     "s3-sync-client": "^4.3.1",
     "uuid": "^9.0.1"
   }
