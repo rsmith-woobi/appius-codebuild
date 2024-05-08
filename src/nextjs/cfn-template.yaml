@@ -257,6 +257,31 @@ Resources:
                   - logs:PutLogEvents
                 Resource: "*"
 
+  ImgOptLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: appius-project-{{UUID}}-img-opt-lambda
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          const myHandler = async (event) => {
+            // Your Lambda function logic here
+          };
+
+          exports.handler = myHandler
+      Role: !GetAtt LambdaFunctionRole.Arn
+      Timeout: 30
+      MemorySize: 512
+
+  ImgOptLambdaFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ImgOptLambdaFunction
+      FunctionUrlAuthType: NONE
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+
   CompletionHandler:
     Type: Custom::CompletionHandler
     DeletionPolicy: Retain

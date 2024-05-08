@@ -127,6 +127,36 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
       cacheBehaviors += cacheBehavior;
     });
 
+  openNextOutput.behaviors
+    .filter((behavior) => behavior.origin === 'imageOptimizer')
+    .forEach((behavior) => {
+      const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
+            TargetOriginId: appius-project-${UUID}-img-opt-lambda
+            CachePolicyId: !Ref CloudFrontServerCachePolicy
+            OriginRequestPolicyId:
+              !FindInMap [
+                CloudFrontOriginRequestPolicyIds,
+                AllViewerExceptHostHeader,
+                OriginRequestPolicyId,
+              ]
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
+            ViewerProtocolPolicy: redirect-to-https
+            SmoothStreaming: "false"
+            Compress: "true"
+            AllowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - HEAD
+              - OPTIONS
+`;
+      cacheBehaviors += cacheBehavior;
+    });
+
   let cfnOutput = cfnTemplate.replace('{{CacheBehaviors}}', cacheBehaviors);
   cfnOutput = cfnOutput.replace(/{{UUID}}/g, UUID);
   cfnOutput = cfnOutput.replace(/{{DEPLOYMENT_UUID}}/g, uuidv4());
