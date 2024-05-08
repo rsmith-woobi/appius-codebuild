@@ -111,6 +111,15 @@ Resources:
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
+          - DomainName:
+              !Select [
+                2,
+                !Split ["/", !GetAtt LambdaFunctionFunctionUrl.FunctionUrl],
+              ]
+            Id: appius-{{UUID}}-img-opt-lambda
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
           - DomainName: "appius-project-{{UUID}}-bucket.s3.us-east-2.amazonaws.com"
             Id: appius-project-{{UUID}}-s3
             S3OriginConfig:
