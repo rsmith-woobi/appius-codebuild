@@ -260,7 +260,7 @@ Resources:
   ImgOptLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: appius-project-{{UUID}}-img-opt-lambda
+      FunctionName: appius-{{UUID}}-img-opt-lambda
       Runtime: nodejs20.x
       Handler: index.handler
       Code:

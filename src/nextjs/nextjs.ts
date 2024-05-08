@@ -131,7 +131,7 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
     .filter((behavior) => behavior.origin === 'imageOptimizer')
     .forEach((behavior) => {
       const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
-            TargetOriginId: appius-project-${UUID}-img-opt-lambda
+            TargetOriginId: appius-${UUID}-img-opt-lambda
             CachePolicyId: !Ref CloudFrontServerCachePolicy
             OriginRequestPolicyId:
               !FindInMap [
