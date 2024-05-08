@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
-import { fileExists } from '../utils/io';
+import { makeCleanDir } from '../utils/io';
 
 export async function generateSsrCloudformationTemplate(ROOT_DIR: string) {
   const UUID = process.env.UUID;
@@ -55,12 +55,7 @@ export async function generateSsrCloudformationTemplate(ROOT_DIR: string) {
   cfnOutput = cfnOutput.replace(/{{UUID}}/g, UUID);
   cfnOutput = cfnOutput.replace(/{{DEPLOYMENT_UUID}}/g, uuidv4());
   const OUT_CFN_DIR = path.join(ROOT_DIR, 'out/cfn');
-  if (!(await fileExists(OUT_CFN_DIR))) {
-    await fs.mkdir(OUT_CFN_DIR);
-  }
+  await makeCleanDir(OUT_CFN_DIR);
   const CFN_PATH = path.join(OUT_CFN_DIR, 'appius-deploy.yaml');
-  if (await fileExists(CFN_PATH)) {
-    await fs.rm(CFN_PATH);
-  }
   await fs.writeFile(CFN_PATH, cfnOutput);
 }
