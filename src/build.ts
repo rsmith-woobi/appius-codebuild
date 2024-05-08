@@ -1,7 +1,10 @@
 import path from 'node:path';
 import url from 'node:url';
 import { generateSsrCloudformationTemplate } from './cloudformation/cloudformation';
-import { buildNextjs } from './nextjs/nextjs';
+import {
+  buildNextjs,
+  generateNextJsCloudformationTemplate,
+} from './nextjs/nextjs';
 import { buildRemixClient, buildRemixLambda } from './remix/remix';
 import {
   buildSveltekitClient,
@@ -27,6 +30,7 @@ switch (FRAMEWORK) {
     break;
   case 'nextjs':
     await buildNextjs(ROOT_DIR);
+    await generateNextJsCloudformationTemplate();
     break;
   default:
     throw new Error('Invalid FRAMEWORK: ' + FRAMEWORK);
