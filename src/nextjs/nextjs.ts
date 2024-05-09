@@ -74,34 +74,10 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
 
   let cacheBehaviors = '';
   openNextOutput.behaviors
-    .filter((behavior) => behavior.origin === 's3')
+    .filter((behavior) => behavior.origin === 'imageOptimizer')
     .forEach((behavior) => {
       const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
-            TargetOriginId: appius-project-${UUID}-s3
-            ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-            SmoothStreaming: "false"
-            Compress: "true"
-            CachePolicyId:
-              !FindInMap [
-                CloudFrontCachePolicyIds,
-                CachingOptimized,
-                CachePolicyId,
-              ]
-`;
-      cacheBehaviors += cacheBehavior;
-    });
-
-  openNextOutput.behaviors
-    .filter(
-      (behavior) => behavior.origin === 'default' && behavior.pattern !== '*',
-    )
-    .forEach((behavior) => {
-      const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
-            TargetOriginId: appius-project-${UUID}-lambda
+            TargetOriginId: appius-${UUID}-img-opt-lambda
             CachePolicyId: !Ref CloudFrontServerCachePolicy
             OriginRequestPolicyId:
               !FindInMap [
@@ -128,10 +104,37 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
     });
 
   openNextOutput.behaviors
-    .filter((behavior) => behavior.origin === 'imageOptimizer')
+    .filter((behavior) => behavior.origin === 's3')
     .forEach((behavior) => {
       const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
-            TargetOriginId: appius-${UUID}-img-opt-lambda
+            TargetOriginId: appius-project-${UUID}-s3
+            ViewerProtocolPolicy: redirect-to-https
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt CloudFrontFunction.FunctionARN
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            SmoothStreaming: "false"
+            Compress: "true"
+            CachePolicyId:
+              !FindInMap [
+                CloudFrontCachePolicyIds,
+                CachingOptimized,
+                CachePolicyId,
+              ]
+`;
+      cacheBehaviors += cacheBehavior;
+    });
+
+  openNextOutput.behaviors
+    .filter(
+      (behavior) => behavior.origin === 'default' && behavior.pattern !== '*',
+    )
+    .forEach((behavior) => {
+      const cacheBehavior = `          - PathPattern: "${behavior.pattern}"
+            TargetOriginId: appius-project-${UUID}-lambda
             CachePolicyId: !Ref CloudFrontServerCachePolicy
             OriginRequestPolicyId:
               !FindInMap [

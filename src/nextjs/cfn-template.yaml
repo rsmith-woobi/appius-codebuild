@@ -172,18 +172,62 @@ Resources:
         Comment: CloudFront function for Appius project {{UUID}}
         Runtime: cloudfront-js-2.0
       FunctionCode: |
-        function handler(event) {
-          var request = event.request;
-          request.headers["x-forwarded-host"] = request.headers.host;
+'function handler(event) {
+  var request = event.request;
+  request.headers["x-forwarded-host"] = request.headers.host;
 
-        for (var key in request.querystring) {
-          if (key.includes("/")) {
-            request.querystring[encodeURIComponent(key)] = request.querystring[key];
-            delete request.querystring[key];
-          }
-        }
-          return request;
-        }
+function getHeader(key) {
+  var header = request.headers[key];
+  if (header) {
+    if (header.multiValue) {
+      return header.multiValue.map((header) => header.value).join(",");
+    }
+    if (header.value) {
+      return header.value;
+    }
+  }
+  return "";
+}
+var cacheKey = "";
+if (request.uri.startsWith("/_next/image")) {
+  cacheKey = getHeader("accept");
+} else {
+  cacheKey =
+    getHeader("rsc") +
+    getHeader("next-router-prefetch") +
+    getHeader("next-router-state-tree") +
+    getHeader("next-url") +
+    getHeader("x-prerender-revalidate");
+}
+if (request.cookies["__prerender_bypass"]) {
+  cacheKey += request.cookies["__prerender_bypass"]
+    ? request.cookies["__prerender_bypass"].value
+    : "";
+}
+var crypto = require("crypto");
+
+var hashedKey = crypto.createHash("md5").update(cacheKey).digest("hex");
+request.headers["x-open-next-cache-key"] = { value: hashedKey };
+
+
+if(request.headers["cloudfront-viewer-city"]) {
+  request.headers["x-open-next-city"] = request.headers["cloudfront-viewer-city"];
+}
+if(request.headers["cloudfront-viewer-country"]) {
+  request.headers["x-open-next-country"] = request.headers["cloudfront-viewer-country"];
+}
+if(request.headers["cloudfront-viewer-region"]) {
+  request.headers["x-open-next-region"] = request.headers["cloudfront-viewer-region"];
+}
+if(request.headers["cloudfront-viewer-latitude"]) {
+  request.headers["x-open-next-latitude"] = request.headers["cloudfront-viewer-latitude"];
+}
+if(request.headers["cloudfront-viewer-longitude"]) {
+  request.headers["x-open-next-longitude"] = request.headers["cloudfront-viewer-longitude"];
+}
+    
+  return request;
+}'
       AutoPublish: true
 
   BucketPolicy:
@@ -277,6 +321,8 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: appius-{{UUID}}-img-opt-lambda
+      Architectures:
+        - arm64
       Runtime: nodejs20.x
       Handler: index.handler
       Code:
@@ -286,9 +332,9 @@ Resources:
           };
 
           exports.handler = myHandler
-      Role: !GetAtt LambdaFunctionRole.Arn
+      Role: !GetAtt ImgOptLambdaFunctionRole.Arn
       Timeout: 30
-      MemorySize: 512
+      MemorySize: 1536
 
   ImgOptLambdaFunctionRole:
     Type: AWS::IAM::Role
@@ -304,7 +350,7 @@ Resources:
               - sts:AssumeRole
       Path: "/"
       Policies:
-        - PolicyName: AppendToLogsPolicy
+        - PolicyName: ImgOptLambdaFunctionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -313,7 +359,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: "*"
+                Resource: "*"               
               - Effect: Allow
                 Action:
                   - s3:GetObject
