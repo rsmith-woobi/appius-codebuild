@@ -56,11 +56,11 @@ Resources:
       BucketName: appius-project-{{UUID}}-bucket
       VersioningConfiguration:
         Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        RestrictPublicBuckets: false
+      # PublicAccessBlockConfiguration:
+      #   BlockPublicAcls: false
+      #   IgnorePublicAcls: false
+      #   BlockPublicPolicy: false
+      #   RestrictPublicBuckets: false
 
   CloudFrontOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl

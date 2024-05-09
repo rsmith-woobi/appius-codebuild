@@ -56,11 +56,11 @@ Resources:
       BucketName: appius-project-{{UUID}}-bucket
       VersioningConfiguration:
         Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        RestrictPublicBuckets: false
+      # PublicAccessBlockConfiguration:
+      #   BlockPublicAcls: false
+      #   IgnorePublicAcls: false
+      #   BlockPublicPolicy: false
+      #   RestrictPublicBuckets: false
 
   CloudFrontOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
@@ -201,6 +201,13 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+          - Effect: Allow
+            Action: "s3:GetObject"
+            Principal: 
+              AWS:
+                - !GetAtt ImgOptLambdaFunctionRole.Arn
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+
 
   LambdaFunction:
     Type: AWS::Lambda::Function
@@ -282,6 +289,35 @@ Resources:
       Role: !GetAtt LambdaFunctionRole.Arn
       Timeout: 30
       MemorySize: 512
+
+  ImgOptLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: AppendToLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
 
   ImgOptLambdaFunctionFunctionUrl:
     Type: AWS::Lambda::Url
