@@ -405,6 +405,8 @@ Resources:
       - LambdaFunctionRole
     Properties:
       ServiceToken: arn:aws:lambda:us-east-2:767397770198:function:appius-deploy
-      Context: deploy
-      ProjectUUID: {{UUID}}
       DeploymentUUID: {{DEPLOYMENT_UUID}}
+      URI: '/deploy'
+      Method: POST
+      Region: !Ref 'AWS::Region'
+      Body: '{ "uuid": "{{UUID}}" }'
