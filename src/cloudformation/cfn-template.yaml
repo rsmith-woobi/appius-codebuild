@@ -271,7 +271,7 @@ Resources:
       - LambdaFunctionPermission
       - LambdaFunctionRole
     Properties:
-      ServiceToken: arn:aws:lambda:us-east-2:767397770198:function:cfn-custom-resource-event-proxy
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:767397770198:function:cfn-custom-resource-event-proxy'
       DeploymentUUID: {{DEPLOYMENT_UUID}}
       URI: '/deploy'
       Method: POST
