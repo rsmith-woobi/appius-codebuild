@@ -16,7 +16,7 @@ phases:
       - ls -la
   post_build:
     commands:
-      - curl https://active-tetra-hideously.ngrok-free.app/build_complete/$UUID
+      - curl https://active-tetra-hideously.ngrok-free.app/build_complete/$UUID/$TEAM_ID
 # artifacts:
 #   files:
 #     - out/s3/**/*
