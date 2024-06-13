@@ -63,6 +63,11 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
     throw new Error('UUID environment variable is not set');
   }
 
+  const TEAM_ID = process.env.TEAM_ID;
+  if (!TEAM_ID) {
+    throw new Error('TEAM_ID environment variable is not set');
+  }
+
   const openNextOutputJson = await fs.readFile(
     path.join(ROOT_DIR, 'repo/.open-next/open-next.output.json'),
     'utf8',
@@ -162,6 +167,7 @@ export async function generateNextJsCloudformationTemplate(ROOT_DIR: string) {
 
   let cfnOutput = cfnTemplate.replace('{{CacheBehaviors}}', cacheBehaviors);
   cfnOutput = cfnOutput.replace(/{{UUID}}/g, UUID);
+  cfnOutput = cfnOutput.replace(/{{TEAM_ID}}/g, TEAM_ID);
   cfnOutput = cfnOutput.replace(/{{DEPLOYMENT_UUID}}/g, uuidv4());
 
   const OUT_CFN_DIR = path.join(ROOT_DIR, 'out/cfn');

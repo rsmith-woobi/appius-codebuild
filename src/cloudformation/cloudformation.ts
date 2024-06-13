@@ -5,8 +5,13 @@ import { makeCleanDir } from '../utils/io';
 
 export async function generateSsrCloudformationTemplate(ROOT_DIR: string) {
   const UUID = process.env.UUID;
+  const TEAM_ID = process.env.TEAM_ID;
   if (!UUID) {
     throw new Error('UUID environment variable is not set');
+  }
+
+  if (!TEAM_ID) {
+    throw new Error('TEAM_ID environment variable is not set');
   }
 
   const CFN_TEMPLATE_PATH = path.join(
@@ -53,6 +58,7 @@ export async function generateSsrCloudformationTemplate(ROOT_DIR: string) {
   });
   let cfnOutput = cfnTemplate.replace('{{CacheBehaviors}}', cacheBehaviors);
   cfnOutput = cfnOutput.replace(/{{UUID}}/g, UUID);
+  cfnOutput = cfnOutput.replace(/{{TEAM_ID}}/g, TEAM_ID);
   cfnOutput = cfnOutput.replace(/{{DEPLOYMENT_UUID}}/g, uuidv4());
   const OUT_CFN_DIR = path.join(ROOT_DIR, 'out/cfn');
   await makeCleanDir(OUT_CFN_DIR);
