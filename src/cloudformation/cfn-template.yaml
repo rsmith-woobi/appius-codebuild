@@ -276,4 +276,4 @@ Resources:
       URI: '/deploy'
       Method: POST
       Region: !Ref 'AWS::Region'
-      Body: !Sub '{ "uuid": "{{UUID}}", "url": "${CloudFrontDistribution.DomainName}", "team_id": {{TEAM_ID}} }'
+      Body: !Sub '{ "uuid": "{{UUID}}", "url": "${CloudFrontDistribution.DomainName}", "team_id": "{{TEAM_ID}}" }'
