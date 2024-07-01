@@ -16,7 +16,7 @@ phases:
       - ls -la
   post_build:
     commands:
-      - curl https://d1mul7a8w3lpg2.cloudfront.net/build_complete/$UUID/$TEAM_ID?success=$CODEBUILD_BUILD_SUCCEEDING
+      - curl https://d1mul7a8w3lpg2.cloudfront.net/build_complete/$UUID/$TEAM_ID/$CODEBUILD_BUILD_SUCCEEDING
 # artifacts:
 #   files:
 #     - out/s3/**/*
