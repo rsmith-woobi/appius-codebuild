@@ -47,7 +47,7 @@ Mappings:
       OriginRequestPolicyId: "775133bc-15f2-49f9-abea-afb2e0bf67d2"
     UserAgentRefererHeaders:
       OriginRequestPolicyId: "acba4595-bd28-49b8-b9fe-13317c0390fa"
-    
+
 
 Resources:
   S3Bucket:
@@ -209,6 +209,7 @@ Resources:
       Role: !GetAtt LambdaFunctionRole.Arn
       Timeout: 30
       MemorySize: 512
+{{ENV_VARS}}
 
   LambdaFunctionFunctionUrl:
     Type: AWS::Lambda::Url
