@@ -268,7 +268,7 @@ Resources:
           exports.handler = myHandler
       Role: !GetAtt LambdaFunctionRole.Arn
       Timeout: 30
-      MemorySize: 512
+      MemorySize: {{LAMBDA_MEMORY}}
 {{ENV_VARS}}
 
   LambdaFunctionFunctionUrl:
